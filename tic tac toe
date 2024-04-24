@@ -35,8 +35,8 @@ def is_board_full(board):
 def get_available_moves(board):
     return [(i, j) for i in range(3) for j in range(3) if board[i][j] == ' ']
 
-# Function for the AI player using Minimax algorithm
-def minimax(board, depth, maximizing_player):
+# Minimax algorithm with alpha-beta pruning
+def minimax(board, depth, alpha, beta, maximizing_player):
     if check_winner(board, 'X'):
         return -1
     if check_winner(board, 'O'):
@@ -48,17 +48,23 @@ def minimax(board, depth, maximizing_player):
         max_eval = float('-inf')
         for move in get_available_moves(board):
             board[move[0]][move[1]] = 'O'
-            eval = minimax(board, depth + 1, False)
+            eval = minimax(board, depth + 1, alpha, beta, False)
             board[move[0]][move[1]] = ' '  # undo the move
             max_eval = max(max_eval, eval)
+            alpha = max(alpha, eval)
+            if beta <= alpha:
+                break
         return max_eval
     else:
         min_eval = float('inf')
         for move in get_available_moves(board):
             board[move[0]][move[1]] = 'X'
-            eval = minimax(board, depth + 1, True)
+            eval = minimax(board, depth + 1, alpha, beta, True)
             board[move[0]][move[1]] = ' '  # undo the move
             min_eval = min(min_eval, eval)
+            beta = min(beta, eval)
+            if beta <= alpha:
+                break
         return min_eval
 
 # Function to find the best move for the AI player
@@ -67,7 +73,7 @@ def find_best_move(board):
     best_move = None
     for move in get_available_moves(board):
         board[move[0]][move[1]] = 'O'
-        move_val = minimax(board, 0, False)
+        move_val = minimax(board, 0, float('-inf'), float('inf'), False)
         board[move[0]][move[1]] = ' '  # undo the move
         if move_val > best_val:
             best_val = move_val
@@ -82,13 +88,17 @@ def play_tic_tac_toe():
         print_board(board)
 
         # Player's move
-        row = int(input("Enter row (0, 1, or 2): "))
-        col = int(input("Enter column (0, 1, or 2): "))
-        if board[row][col] == ' ':
-            board[row][col] = 'X'
-        else:
-            print("Cell already occupied. Try again.")
-            continue
+        while True:
+            try:
+                row = int(input("Enter row (0, 1, or 2): "))
+                col = int(input("Enter column (0, 1, or 2): "))
+                if board[row][col] == ' ':
+                    board[row][col] = 'X'
+                    break
+                else:
+                    print("Cell already occupied. Try again.")
+            except ValueError:
+                print("Please enter a valid number.")
 
         # Check if the player wins
         if check_winner(board, 'X'):
@@ -104,8 +114,14 @@ def play_tic_tac_toe():
 
         # AI's move
         print("AI's move:")
-        ai_row, ai_col = find_best_move(board)
-        board[ai_row][ai_col] = 'O'
+        ai_move = find_best_move(board)
+        if ai_move:
+            board[ai_move[0]][ai_move[1]] = 'O'
+        else:
+            # If Minimax fails to find a move, make a random move
+            available_moves = get_available_moves(board)
+            random_move = random.choice(available_moves)
+            board[random_move[0]][random_move[1]] = 'O'
 
         # Check if the AI wins
         if check_winner(board, 'O'):
@@ -121,6 +137,7 @@ def play_tic_tac_toe():
 
 # Start the game
 play_tic_tac_toe()
+
 
 
 
